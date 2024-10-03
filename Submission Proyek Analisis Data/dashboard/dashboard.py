@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 sns.set(style='white')
 
-day_data = pd.read_csv("Submission Proyek Analisis Data/dashboard/day.csv")  
+day_data = pd.read_csv(r"\Semester 7\BANGKIT\DICODING\Submission Proyek Analisis Data\dashboard\day.csv") 
 day_data.head()
 
 day_data['weekday'] = day_data['weekday'].map({
@@ -19,18 +19,27 @@ day_data['weathersit'] = day_data['weathersit'].map({
     4: 'Severe Weather'
 })
 
+# Fungsi untuk mengelompokkan data berdasarkan weekday
 def create_weekday_rent_df(df):
     return df.groupby(by='weekday').agg({'cnt': 'sum'}).reset_index()
 
+# Fungsi untuk mengelompokkan data berdasarkan hari libur
 def create_holiday_rent_df(df):
     return df.groupby(by='holiday').agg({'cnt': 'sum'}).reset_index()
 
+# Fungsi untuk mengelompokkan data berdasarkan kondisi cuaca
 def create_weather_rent_df(df):
     return df.groupby(by='weathersit').agg({'cnt': 'sum'}).reset_index()
+
+# Fungsi untuk mengelompokkan data berdasarkan bulan
+def create_monthly_rent_df(df):
+    df['dteday'] = pd.to_datetime(df['dteday'])  # pastikan kolom 'dteday' diubah ke datetime
+    return df.groupby(df['dteday'].dt.to_period('M')).agg({'cnt': 'sum'}).reset_index()
 
 min_date = pd.to_datetime(day_data['dteday']).dt.date.min()
 max_date = pd.to_datetime(day_data['dteday']).dt.date.max()
 
+# Komponen input untuk rentang waktu
 start_date, end_date = st.date_input(
     label='Rentang Waktu',
     min_value=min_date,
@@ -41,15 +50,21 @@ start_date, end_date = st.date_input(
 main_df = day_data[(day_data['dteday'] >= str(start_date)) & 
                    (day_data['dteday'] <= str(end_date))]
 
+# Membuat dataframe berdasarkan grup data
 monthly_rent_df = create_monthly_rent_df(main_df)
 weekday_rent_df = create_weekday_rent_df(main_df)
 holiday_rent_df = create_holiday_rent_df(main_df)
 weather_rent_df = create_weather_rent_df(main_df)
 
-# Membuat Dashboard 
+# Membuat dataframe dummy untuk daily rent (contoh karena belum didefinisikan di kode asli)
+daily_casual_rent_df = main_df[['casual']].copy()
+daily_registered_rent_df = main_df[['registered']].copy()
+daily_rent_df = main_df[['cnt']].copy()
 
+# Membuat Dashboard
 st.header('Bike Rental Dashboard')
 
+# Bagian untuk Daily Rentals
 st.subheader('Daily Rentals')
 col1, col2, col3 = st.columns(3)
 
@@ -60,11 +75,12 @@ with col1:
 with col2:
     daily_rent_registered = daily_registered_rent_df['registered'].sum()
     st.metric('Registered User', value=daily_rent_registered)
- 
+
 with col3:
     daily_rent_total = daily_rent_df['cnt'].sum()  
     st.metric('Total User', value=daily_rent_total)
 
+# Bagian untuk Weatherly Rentals
 st.subheader('Weatherly Rentals')
 
 fig, ax = plt.subplots(figsize=(16, 8))
@@ -87,11 +103,13 @@ ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=15)
 st.pyplot(fig)
 
+# Bagian untuk Weekday and Holiday Rentals
 st.subheader('Weekday and Holiday Rentals')
 
 fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(15, 12))
 colors = ["tab:blue", "tab:orange"]
 
+# Plot untuk Holiday
 sns.barplot(
     x='holiday',
     y='cnt',
@@ -109,6 +127,7 @@ axes[0].set_ylabel('Number of Rentals', fontsize=12)
 axes[0].tick_params(axis='x', labelsize=15)
 axes[0].tick_params(axis='y', labelsize=10)
 
+# Plot untuk Weekday
 sns.barplot(
     x='weekday',
     y='cnt',
