@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 sns.set(style='white')
 
-day_data = pd.read_csv(r"\Semester 7\BANGKIT\DICODING\Submission Proyek Analisis Data\dashboard\day.csv") 
+day_data = pd.read_csv("day.csv") 
 day_data.head()
 
 day_data['weekday'] = day_data['weekday'].map({
